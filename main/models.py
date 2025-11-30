@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator
 from django.db import models
 
 # Create your models here.
@@ -111,6 +112,8 @@ class Homework(models.Model):
     student = models.ForeignKey('account.Student', on_delete=models.CASCADE, related_name='homeworks')
     group = models.ForeignKey('main.Group', on_delete=models.CASCADE, related_name='homeworks')
     text = models.TextField()
+    answer = models.TextField(null=True, blank=True)
+    ball = models.PositiveBigIntegerField(validators=[MaxValueValidator(100)], default=0)
     file = models.FileField(upload_to=homework_file_path)
     xp = models.PositiveIntegerField(default=0)
     coins = models.PositiveIntegerField(default=0)

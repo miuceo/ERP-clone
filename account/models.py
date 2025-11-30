@@ -79,7 +79,7 @@ class AdminTeacher(models.Model):
         ('assistant_teacher', 'Assistant teacher'),
     )
 
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='admin_teachers')
     role = models.CharField(max_length=20, choices=ROLE)
     course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -101,7 +101,7 @@ class Student(models.Model):
         ('F', 'Female'),
     )
 
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='students')
     gender = models.CharField(max_length=1, choices=GENDER)
     year = models.PositiveIntegerField(validators=[MinValueValidator(2000)])
     level = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(11)])

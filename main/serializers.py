@@ -1,8 +1,6 @@
 from rest_framework import serializers
-from rest_framework.validators import qs_exists
 
-from account.models import Student, AdminTeacher, Course
-from account.serializers import StudentSerializer, AdminTeacherSerializer
+from account.models import CustomUser, Student, AdminTeacher, CourseType, Course
 from .models import (
     Weekday,
     Room,
@@ -49,15 +47,13 @@ class LessonSerializer(serializers.ModelSerializer):
     group = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.all()
     )
-    homeworks = HomeworkSerializer(source='homeworks', many=True, read_only=True)
-    attendences = AttendenceSerailizer(source='attendences', many=True, read_only=True)
 
     class Meta:
         model = Lesson
         fields = '__all__'
         read_only_fields = ['id']
-
-
+        
+        
 class StudentGroupSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(
         queryset=Student.objects.all()
@@ -82,10 +78,6 @@ class GroupSerializer(serializers.ModelSerializer):
     course = serializers.PrimaryKeyRelatedField(
         queryset=Course.objects.all()
     )
-    students = StudentSerializer(source = 'students',many=True, read_only=True)
-    teachers = AdminTeacherSerializer(source='admin_teachers', many=True, read_only=True)
-    lessons = LessonSerializer(source='lessons', many=True, read_only=True)
-    homeworks = HomeworkSerializer(source='homeworks')
 
     class Meta:
         model = Group
@@ -94,7 +86,6 @@ class GroupSerializer(serializers.ModelSerializer):
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    groups = GroupSerializer(source='groups', many=True, read_only=True)
 
     class Meta:
         model = Room
@@ -102,7 +93,6 @@ class RoomSerializer(serializers.ModelSerializer):
 
 
 class WeekDaySerializer(serializers.ModelSerializer):
-    groups = GroupSerializer(source='groups', many=True, read_only=True)
 
     class Meta:
         model = Weekday
