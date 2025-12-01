@@ -12,10 +12,33 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id', 'xp', 'coins', 'level', 'is_active']
 
+    def validate_gender(self, value:str):
+        genders = ['M', 'F']
+        if not value.strip():
+            raise serializers.ValidationError("Gender must be included!")
+        if not value.strip().upper() in genders:
+            raise serializers.ValidationError('Gender field must be either male or female!')
+        
+        return value
+    
+    def validate_year(self, value:int):
+        if not value:
+            raise serializers.ValidationError("The year field must be included")
+        if value < 2000:
+            raise serializers.ValidationError('The year field for students must be 2000 and over')
+        
+        return value
+
+    
 
 class AdminTeacherSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(
         queryset=CustomUser.objects.all(),
+    )
+    course = serializers.PrimaryKeyRelatedField(
+        queryset = Course.objects.all(),
+        required = False,
+        allow_null=True
     )
 
 
@@ -25,11 +48,16 @@ class AdminTeacherSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'is_active',]
 
 
+    def validate_role(self, value:str):
+        if not value:
+            raise serializers.ValidationError('Role cannot be empty!')
+        
+        roles = ['admin', 'main_teacher', 'assistant_teacher']
+        if value.strip().lower() not in roles:
+            raise serializers.ValidationError("Role must be one of those 'admin', 'main_teacher', 'assistant_teacher'!")
 
-
-from rest_framework import serializers
-from .models import CustomUser
-
+        return value
+            
 
 class CustomUserSerializer(serializers.ModelSerializer):
     profession = serializers.CharField(max_length=100, required=False)
@@ -59,9 +87,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
                 "Password must include uppercase, lowercase, digit, and special character."
             )
 
-        if self.instance and self.instance.check_password(password):
-            raise serializers.ValidationError("New password cannot be same as old password.")
-
         return password
 
 
@@ -72,15 +97,20 @@ class CustomUserSerializer(serializers.ModelSerializer):
         if phone.startswith('+998'):
             if len(phone) != 13 or not phone[1:].isdigit():
                 raise serializers.ValidationError("Invalid phone format.")
-            phone = phone
+
+
 
         if phone.startswith('998'):
             if len(phone) != 12 or not phone.isdigit():
                 raise serializers.ValidationError("Invalid phone format.")
 
+
         qs = CustomUser.objects.exclude(id=self.instance.id if self.instance else None)
         if qs.filter(phone=phone).exists():
             raise serializers.ValidationError("This phone number is already registered.")
+
+        if phone.startswith("998"):
+            phone = "+" + phone
 
         return phone
 
@@ -90,12 +120,13 @@ class CustomUserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Email must end with gmail.com, yahoo.com, yandex.ru or mail.ru."
             )
+        
 
         try:
             username, domain = email.split('@')
         except ValueError:
             raise serializers.ValidationError("Invalid email format.")
-
+        
         if len(username) < 5:
             raise serializers.ValidationError("Email username must be at least 5 characters.")
 
@@ -139,7 +170,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
-        user = CustomUser(**validated_data)
+        user = CustomUser.objects.create(**validated_data)
         user.set_password(password)
         user.save()
         return user
@@ -152,6 +183,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
 
         if password:
+            if instance.check_password(password):
+                raise serializers.ValidationError("New password cannot be same as old password.")
             instance.set_password(password)
 
         instance.save()
@@ -168,9 +201,28 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id', 'is_active']
 
+    
+    def validate_price(self, price):
+        if price<=0:
+            raise serializers.ValidationError("The price field must be positive integer")
+        
+        return price
+
 
 class CourseTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CourseType
-        fields = ['name']
+        fields = ['id', 'name']
+        read_only_fields = ['id']
+
+    def validate_name(self, name:str):
+        if not name.strip():
+            raise serializers.ValidationError("The name field cannot be empty!")
+        if CourseType.objects.filter(name__iexact = name.strip()).exists():
+            raise serializers.ValidationError("The course type with exactly this name already exists!")
+        if not name.replace(" ","").isalpha():
+            raise serializers.ValidationError("The course type must contain only letters!")
+
+        
+        return name
